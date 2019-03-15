@@ -1,5 +1,14 @@
 <?php
+    /*
+    * Classe para gerar auditoria de tabelas (log de alterações das tabelas)
+    * @AUTHOR Leonardo Henrique Barussi
+    */
     class DataBase{
+        /*
+        * Função para fazer conexão com o banco de dados
+        * @access public
+        * @return retorna a conexão do banco
+        */
         public function GetConnection(){
             try{
                 $conn = new \PDO("mysql:host= ;dbname= ", '', '');
@@ -13,9 +22,31 @@
     }
 
     class Auditoria extends DataBase{
+        /** 
+        * Variavel responsável por receber a conexão com o banco. 
+        * @access private 
+        */ 
         private $db;
+        
+        /** 
+        * Variável responsável por receber o nome da tabela vinda por parâmetro.
+        * @access private 
+        */ 
         private $table;
+        
+        /** 
+        * Variável responsável por receber o nome do banco de dados vindo por parâmetro.
+        * @access private 
+        */ 
         private $schema;
+        
+        /*
+        * Construtor resposável por fazer a conexão com banco dedados.
+        * @access public
+        * @param String $table 
+        * @param String $schema
+        * @return void
+        */
         public function __construct($table, $schema){
             $this->db = new DataBase();
             $this->db = $this->db->GetConnection();
@@ -24,7 +55,12 @@
             $this->table = $table;
             $this->schema = $schema;
         }
-
+        
+        /*
+        * Função responsável por iniciar todo o procedimento.
+        * @access public
+        * @return void
+        */
         public function Audit(){
             try{
                 $this->DataBase();
@@ -32,7 +68,12 @@
                 echo $ex->getMessage();
             }
         }
-
+        
+        /*
+        * Função responsável por fazer verificação se existe o banco de dados.
+        * @access private
+        * @return void
+        */
         private function DataBase(){
             try{
                 $sql = $this->db->prepare("SELECT 
@@ -53,7 +94,12 @@
                 throw new Exception($ex->getMessage());
             }
         }
-
+        
+        /*
+        * Função responsável por fazer a verificação se existe a tabela informada no banco informado.
+        * @access private
+        * @return void
+        */
         private function Table(){
             try{
                 $sql = $this->db->prepare("SELECT 
@@ -77,7 +123,12 @@
                 throw new Exception($ex->getMessage());
             }
         }
-
+        
+        /*
+        * Função responsável por buscar as colunas da tabela informada.
+        * @access private
+        * @return void
+        */
         private function Columns(){
             try{
                 $sql = $this->db->prepare("SELECT 
@@ -123,12 +174,16 @@
                 throw new Exception($ex->getMessage());
             }
         }
-
+        
+        /*
+        * Função responsável por dar inicio ao processo de criação da tabela de auditoria.
+        * @access private
+        * @return void
+        */
         private function CreateAudit($elements){
             try{
                 $create = 'CREATE TABLE '.$this->schema.'.'.$this->table.'_audit (';
                 $total = count($elements);
-                $query = 'INSERT INTO '.$this->table.'_audit (';
                 for($i=0; $i < count($elements); $i++){
                     if($i == 0){
                         if($elements[$i]['coluna_normal'] == 'action'){
@@ -186,7 +241,12 @@
                 throw new Exception($ex->getMessage());
             }
         }
-
+        
+        /*
+        * Função responsável por criar as triggers da auditoria.
+        * @access private
+        * @return void
+        */
         private function CreateTrigger($query_insert, $query_update, $query_delete){
             try{
                 $trigger_insert = 'DROP TRIGGER IF EXISTS `'.$this->schema.'`.`'.$this->table.'_AFTER_INSERT`; <br /> DELIMITER $$ <br />  USE `'.$this->schema.'`$$ <br /> CREATE DEFINER = CURRENT_USER TRIGGER `'.$this->schema.'`.`'.$this->table.'_AFTER_INSERT` AFTER INSERT ON `'.$this->table.'` FOR EACH ROW
